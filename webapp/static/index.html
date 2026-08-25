@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tàu sắp cập cảng Việt Nam</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="anchor">⚓</span>
+    <div>
+      <h1>Tàu sắp cập cảng Việt Nam</h1>
+      <p class="sub">Gộp dữ liệu từ cảng vụ hàng hải, terminal, AIS và lịch hãng tàu</p>
+    </div>
+  </div>
+  <span id="demoBadge" class="badge badge-demo" hidden>CHẾ ĐỘ DEMO</span>
+</header>
+
+<main class="layout">
+  <aside class="panel controls">
+    <h2>Tham số</h2>
+
+    <label class="field">
+      <span>Cửa sổ ETA (ngày tới)</span>
+      <div class="range-row">
+        <input type="number" id="fromDays" value="0" min="0" max="365" step="1" aria-label="Từ ngày">
+        <span class="dash">→</span>
+        <input type="number" id="days" value="30" min="1" max="365" step="1" aria-label="Đến ngày">
+      </div>
+    </label>
+
+    <fieldset class="field">
+      <legend>Loại nguồn</legend>
+      <div id="kinds" class="checks"></div>
+    </fieldset>
+
+    <label class="field">
+      <span>Cảng</span>
+      <select id="ports" multiple size="8"></select>
+      <small>Bỏ trống = tất cả cảng. Ctrl/Cmd để chọn nhiều.</small>
+    </label>
+
+    <label class="check-inline">
+      <input type="checkbox" id="keepNoEta"> Giữ cả bản ghi không đọc được ETA
+    </label>
+    <label class="check-inline">
+      <input type="checkbox" id="demoMode"> Dùng dữ liệu mẫu (không gọi mạng)
+    </label>
+
+    <div class="actions">
+      <button id="runBtn" class="btn btn-primary">Chạy thu thập</button>
+      <button id="cancelBtn" class="btn btn-ghost" hidden>Hủy</button>
+    </div>
+
+    <div id="progressWrap" hidden>
+      <div class="progress"><div id="progressBar" class="progress-fill"></div></div>
+      <p id="progressText" class="progress-text"></p>
+    </div>
+
+    <details class="log-box">
+      <summary>Nhật ký chạy</summary>
+      <pre id="log"></pre>
+    </details>
+
+    <details class="log-box">
+      <summary>Lần chạy gần đây</summary>
+      <ul id="jobList" class="job-list"></ul>
+    </details>
+  </aside>
+
+  <section class="panel results">
+    <div id="stats" class="stats"></div>
+
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Lọc theo tên tàu, IMO, cảng, đại lý…">
+      <select id="portFilter"><option value="">Mọi cảng</option></select>
+      <select id="kindFilter"><option value="">Mọi loại nguồn</option></select>
+      <a id="csvLink" class="btn btn-ghost" hidden download>Tải CSV</a>
+    </div>
+
+    <div id="emptyState" class="empty">
+      <p>Chưa có dữ liệu. Chọn tham số bên trái rồi bấm <strong>Chạy thu thập</strong>.</p>
+      <p class="hint">Chưa có mạng tới các trang cảng vụ? Bật <em>dữ liệu mẫu</em> để xem giao diện hoạt động.</p>
+    </div>
+
+    <div class="table-scroll">
+      <table id="resultTable" hidden>
+        <thead>
+          <tr>
+            <th data-sort="eta">ETA</th>
+            <th data-sort="countdown">Còn</th>
+            <th data-sort="vessel_name">Tàu</th>
+            <th data-sort="imo">IMO</th>
+            <th data-sort="flag">Quốc tịch</th>
+            <th data-sort="port_name">Cảng</th>
+            <th data-sort="berth">Cầu bến</th>
+            <th data-sort="from_port">Đến từ</th>
+            <th data-sort="agent">Đại lý</th>
+            <th data-sort="source">Nguồn</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+    <p id="rowNote" class="row-note" hidden></p>
+    <p id="errorBox" class="errors" hidden></p>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

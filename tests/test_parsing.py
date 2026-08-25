@@ -109,7 +109,9 @@ class TestSourcePipeline(unittest.TestCase):
         self.assertEqual(first.vessel_name, "HAI NAM 68")
         self.assertEqual(first.imo, "9188219")
         self.assertEqual(first.source_kind, "port_authority")
-        self.assertEqual(first.port_name, "haiphong")
+        # port_key duoc tra nguoc ve danh muc cang -> ten va UNLOCODE that
+        self.assertEqual(first.port_name, "Hai Phong")
+        self.assertEqual(first.port_code, "VNHPH")
         self.assertIsNotNone(first.eta)
 
     def test_source_skipped_without_id(self):

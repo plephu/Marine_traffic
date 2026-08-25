@@ -109,8 +109,7 @@ class HtmlTableSource(Source):
             if port is not None and self.id_field and not port.get(self.id_field):
                 ctx.log("bo qua %s: chua co %s" % (port.get("key"), self.id_field))
                 continue
-            port = port or {"key": self.port_key, "name": self.port_key,
-                            "unlocode": None}
+            port = port or _lookup_port(self.port_key)
             for url, offset in self._urls_for_port(port, ctx):
                 try:
                     html = ctx.fetcher.get_text(url)
@@ -127,6 +126,16 @@ class HtmlTableSource(Source):
         if self.postprocess:
             results = self.postprocess(results)
         return results
+
+
+def _lookup_port(port_key):
+    """Tra ten/UNLOCODE that cua cang tu danh muc cho nguon gan cung mot cang."""
+    from ..ports import load_ports
+
+    for port in load_ports():
+        if port.get("key") == port_key:
+            return port
+    return {"key": port_key, "name": port_key, "unlocode": None}
 
 
 def _num(value):

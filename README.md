@@ -37,6 +37,50 @@ python -m vnports list-sources          # 23 nguồn đã cấu hình, nguồn n
 python -m vnports doctor --dump-dir raw/  # kiểm tra nguồn nào truy cập & parse được
 ```
 
+## Web app
+
+Giao diện web để bấm chạy job và xem kết quả ngay trên trình duyệt:
+
+```bash
+pip install -r requirements-web.txt
+python -m webapp.server                 # mở http://127.0.0.1:8000
+python -m webapp.server --demo          # dữ liệu mẫu, không gọi mạng
+```
+
+![Giao diện web](docs/webapp.png)
+
+Giao diện gồm: chọn cửa sổ ETA, loại nguồn và cảng ở panel trái; bấm **Chạy thu thập**
+để tạo job chạy nền; thanh tiến độ + nhật ký cập nhật theo thời gian thực; bảng kết
+quả có tìm kiếm, lọc theo cảng/loại nguồn, sắp xếp theo cột và nút tải CSV.
+
+Cột **Nguồn** hiển thị nguồn chính; huy hiệu `+n` bên cạnh cho biết bản ghi được gộp
+từ thêm n nguồn khác (di chuột để xem tên).
+
+### API
+
+| Method | Đường dẫn | Công dụng |
+|---|---|---|
+| `GET` | `/api/config` | Danh mục cảng + nguồn (để dựng form) |
+| `POST` | `/api/jobs` | Tạo job; body: `ports`, `kinds`, `sources`, `days`, `from_days`, `demo` |
+| `GET` | `/api/jobs` | Danh sách job gần đây |
+| `GET` | `/api/jobs/{id}` | Trạng thái, tiến độ, nhật ký, lỗi |
+| `GET` | `/api/jobs/{id}/results` | Kết quả dạng JSON |
+| `GET` | `/api/jobs/{id}/results.csv` | Tải CSV (có BOM cho Excel) |
+| `POST` | `/api/jobs/{id}/cancel` | Hủy job đang chạy |
+
+Tài liệu tương tác có sẵn tại `/docs` (Swagger UI của FastAPI).
+
+**Lưu ý triển khai:** job và kết quả nằm trong bộ nhớ tiến trình (giữ 20 job gần
+nhất), phù hợp chạy nội bộ một tiến trình. Muốn nhiều worker hoặc giữ lịch sử lâu dài
+thì thay `JobStore` bằng Redis/DB và chạy job bằng RQ/Celery. Server chưa có xác thực
+— đừng mở thẳng ra Internet.
+
+## Chế độ demo
+
+Không có mạng tới các trang cảng vụ vẫn thử được toàn bộ luồng: `--demo` (hoặc tick
+*Dùng dữ liệu mẫu*) sinh bảng HTML giống trang thật với ETA tính theo giờ hiện tại,
+đi qua đúng bộ parser và bộ gộp trùng như dữ liệu thật.
+
 ## Tầm nhìn ETA: vì sao cần nhiều nguồn
 
 Không nguồn miễn phí nào phủ trọn 30 ngày:
@@ -66,6 +110,8 @@ Không có key thì nguồn tương ứng tự động bị bỏ qua, phần cò
 ```
 vnports/
   cli.py           lệnh fetch / doctor / list-sources / list-ports
+  jobs.py          job chạy nền + tiến độ, dùng chung cho web app
+  demo.py          sinh dữ liệu mẫu cho chế độ demo
   sources/
     catalog.py     khai báo 23 nguồn (cảng vụ, terminal, AIS, hãng tàu)
     base.py        engine đọc bảng HTML dùng chung
@@ -74,8 +120,11 @@ vnports/
   dates.py         đọc mọi định dạng ngày giờ, quy về Asia/Ho_Chi_Minh
   aggregate.py     lọc cửa sổ ETA + gộp trùng giữa các nguồn
   data_ports.json  danh mục cảng, sửa trực tiếp để thêm cảng/ID
+webapp/
+  server.py        FastAPI: /api/jobs, /api/config, tải CSV
+  static/          giao diện vanilla JS, không cần build step
 docs/SOURCES.md    toàn bộ nguồn khả dụng
-tests/             13 test chạy offline trên HTML mẫu
+tests/             23 test chạy offline (parser, gộp trùng, job, API)
 ```
 
 ## Thêm nguồn mới
@@ -101,7 +150,8 @@ Tiêu đề lạ thì bổ sung từ khoá vào `COLUMN_KEYWORDS` trong `vnports
 python -m unittest discover -s tests -v
 ```
 
-Test chạy hoàn toàn offline trên HTML mẫu trong `tests/fixtures/`.
+Test chạy hoàn toàn offline trên HTML mẫu trong `tests/fixtures/` và dữ liệu demo.
+Phần test API cần `pip install httpx`, thiếu thì tự bỏ qua.
 
 ## Trạng thái
 
@@ -109,3 +159,7 @@ Mã được viết trong môi trường **bị chặn toàn bộ truy cập m�
 và cấu trúc bảng lấy từ tài liệu/kết quả tìm kiếm công khai và **chưa đối chiếu được
 với trang thật**. Chạy `python -m vnports doctor --dump-dir raw/` trên máy có mạng để
 biết nguồn nào hoạt động và chỉnh lại URL/từ khoá cột nếu cần.
+
+Riêng phần web app đã được kiểm tra đầy đủ bằng trình duyệt thật (Playwright/Chromium)
+ở chế độ demo: tạo job, theo dõi tiến độ, gộp trùng, lọc, sắp xếp, tải CSV, giao diện
+hẹp và trường hợp mọi nguồn đều lỗi.
